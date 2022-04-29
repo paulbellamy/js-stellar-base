@@ -13,9 +13,9 @@ typedef string string32<32>;
 typedef string string64<64>;
 typedef int64 SequenceNumber;
 typedef uint64 TimePoint;
-typedef uint64 Duration;
 typedef opaque DataValue<64>;
 typedef Hash PoolID; // SHA256(LiquidityPoolParameters)
+typedef opaque WASMCode<65536>;
 
 // 1-4 alphanumeric characters right-padded with 0 bytes
 typedef opaque AssetCode4[4];
@@ -98,7 +98,9 @@ enum LedgerEntryType
     OFFER = 2,
     DATA = 3,
     CLAIMABLE_BALANCE = 4,
-    LIQUIDITY_POOL = 5
+    LIQUIDITY_POOL = 5,
+    CONTRACT_CODE = 6,
+    CONTRACT_DATA = 7
 };
 
 struct Signer
@@ -134,19 +136,6 @@ const MAX_SIGNERS = 20;
 
 typedef AccountID* SponsorshipDescriptor;
 
-struct AccountEntryExtensionV3
-{
-    // We can use this to add more fields, or because it is first, to
-    // change AccountEntryExtensionV3 into a union.
-    ExtensionPoint ext;
-
-    // Ledger number at which `seqNum` took on its present value.
-    uint32 seqLedger;
-
-    // Time at which `seqNum` took on its present value.
-    TimePoint seqTime;
-};
-
 struct AccountEntryExtensionV2
 {
     uint32 numSponsored;
@@ -157,8 +146,6 @@ struct AccountEntryExtensionV2
     {
     case 0:
         void;
-    case 3:
-        AccountEntryExtensionV3 v3;
     }
     ext;
 };
@@ -306,8 +293,7 @@ struct TrustLineEntry
 
 enum OfferEntryFlags
 {
-    // an offer with this flag will not act on and take a reverse offer of equal
-    // price
+    // an offer with this flag will not act on and take a reverse offer of equal price
     PASSIVE_FLAG = 1
 };
 
@@ -467,7 +453,7 @@ struct LiquidityPoolConstantProductParameters
 {
     Asset assetA; // assetA < assetB
     Asset assetB;
-    int32 fee; // Fee is in basis points, so the actual rate is (fee/100)%
+    int32 fee;    // Fee is in basis points, so the actual rate is (fee/100)%
 };
 
 struct LiquidityPoolEntry
@@ -484,11 +470,33 @@ struct LiquidityPoolEntry
             int64 reserveA;        // amount of A in the pool
             int64 reserveB;        // amount of B in the pool
             int64 totalPoolShares; // total number of pool shares issued
-            int64 poolSharesTrustLineCount; // number of trust lines for the
-                                            // associated pool shares
+            int64 poolSharesTrustLineCount; // number of trust lines for the associated pool shares
         } constantProduct;
     }
     body;
+};
+
+enum ContractCodeType {
+    CONTRACT_CODE_WASM = 0
+};
+
+struct ContractCodeEntry {
+    AccountID owner;
+    int64 contractID;
+    union switch (ContractCodeType type)
+    {
+    case CONTRACT_CODE_WASM:
+        WASMCode wasm;
+    } body;
+};
+
+%struct SCVal;
+
+struct ContractDataEntry {
+    AccountID owner;
+    int64 contractID;
+    SCVal *key;
+    SCVal *val;
 };
 
 struct LedgerEntryExtensionV1
@@ -521,6 +529,10 @@ struct LedgerEntry
         ClaimableBalanceEntry claimableBalance;
     case LIQUIDITY_POOL:
         LiquidityPoolEntry liquidityPool;
+    case CONTRACT_CODE:
+        ContractCodeEntry contractCode;
+    case CONTRACT_DATA:
+        ContractDataEntry contractData;
     }
     data;
 
@@ -575,6 +587,19 @@ case LIQUIDITY_POOL:
     {
         PoolID liquidityPoolID;
     } liquidityPool;
+case CONTRACT_CODE:
+    struct
+    {
+        AccountID owner;
+        int64 contractID;
+    } contractCode;
+case CONTRACT_DATA:
+    struct
+    {
+        AccountID owner;
+        int64 contractID;
+        SCVal *key;
+    } contractData;
 };
 
 // list of all envelope types used in the application

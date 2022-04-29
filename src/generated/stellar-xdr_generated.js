@@ -1,4 +1,4 @@
-// Automatically generated on 2022-04-11T10:56:25-07:00
+// Automatically generated on 2022-04-29T13:24:06+00:00
 // DO NOT EDIT or your changes may be overwritten
 
 /* jshint maxstatements:2147483647  */
@@ -8,6 +8,645 @@ import * as XDR from 'js-xdr';
 
 
 var types = XDR.config(xdr => {
+
+// === xdr source ============================================================
+//
+//   typedef opaque Value<>;
+//
+// ===========================================================================
+xdr.typedef("Value", xdr.varOpaque());
+
+// === xdr source ============================================================
+//
+//   struct SCPBallot
+//   {
+//       uint32 counter; // n
+//       Value value;    // x
+//   };
+//
+// ===========================================================================
+xdr.struct("ScpBallot", [
+  ["counter", xdr.lookup("Uint32")],
+  ["value", xdr.lookup("Value")],
+]);
+
+// === xdr source ============================================================
+//
+//   enum SCPStatementType
+//   {
+//       SCP_ST_PREPARE = 0,
+//       SCP_ST_CONFIRM = 1,
+//       SCP_ST_EXTERNALIZE = 2,
+//       SCP_ST_NOMINATE = 3
+//   };
+//
+// ===========================================================================
+xdr.enum("ScpStatementType", {
+  scpStPrepare: 0,
+  scpStConfirm: 1,
+  scpStExternalize: 2,
+  scpStNominate: 3,
+});
+
+// === xdr source ============================================================
+//
+//   struct SCPNomination
+//   {
+//       Hash quorumSetHash; // D
+//       Value votes<>;      // X
+//       Value accepted<>;   // Y
+//   };
+//
+// ===========================================================================
+xdr.struct("ScpNomination", [
+  ["quorumSetHash", xdr.lookup("Hash")],
+  ["votes", xdr.varArray(xdr.lookup("Value"), 2147483647)],
+  ["accepted", xdr.varArray(xdr.lookup("Value"), 2147483647)],
+]);
+
+// === xdr source ============================================================
+//
+//   struct
+//           {
+//               Hash quorumSetHash;       // D
+//               SCPBallot ballot;         // b
+//               SCPBallot* prepared;      // p
+//               SCPBallot* preparedPrime; // p'
+//               uint32 nC;                // c.n
+//               uint32 nH;                // h.n
+//           }
+//
+// ===========================================================================
+xdr.struct("ScpStatementPrepare", [
+  ["quorumSetHash", xdr.lookup("Hash")],
+  ["ballot", xdr.lookup("ScpBallot")],
+  ["prepared", xdr.option(xdr.lookup("ScpBallot"))],
+  ["preparedPrime", xdr.option(xdr.lookup("ScpBallot"))],
+  ["nC", xdr.lookup("Uint32")],
+  ["nH", xdr.lookup("Uint32")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct
+//           {
+//               SCPBallot ballot;   // b
+//               uint32 nPrepared;   // p.n
+//               uint32 nCommit;     // c.n
+//               uint32 nH;          // h.n
+//               Hash quorumSetHash; // D
+//           }
+//
+// ===========================================================================
+xdr.struct("ScpStatementConfirm", [
+  ["ballot", xdr.lookup("ScpBallot")],
+  ["nPrepared", xdr.lookup("Uint32")],
+  ["nCommit", xdr.lookup("Uint32")],
+  ["nH", xdr.lookup("Uint32")],
+  ["quorumSetHash", xdr.lookup("Hash")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct
+//           {
+//               SCPBallot commit;         // c
+//               uint32 nH;                // h.n
+//               Hash commitQuorumSetHash; // D used before EXTERNALIZE
+//           }
+//
+// ===========================================================================
+xdr.struct("ScpStatementExternalize", [
+  ["commit", xdr.lookup("ScpBallot")],
+  ["nH", xdr.lookup("Uint32")],
+  ["commitQuorumSetHash", xdr.lookup("Hash")],
+]);
+
+// === xdr source ============================================================
+//
+//   union switch (SCPStatementType type)
+//       {
+//       case SCP_ST_PREPARE:
+//           struct
+//           {
+//               Hash quorumSetHash;       // D
+//               SCPBallot ballot;         // b
+//               SCPBallot* prepared;      // p
+//               SCPBallot* preparedPrime; // p'
+//               uint32 nC;                // c.n
+//               uint32 nH;                // h.n
+//           } prepare;
+//       case SCP_ST_CONFIRM:
+//           struct
+//           {
+//               SCPBallot ballot;   // b
+//               uint32 nPrepared;   // p.n
+//               uint32 nCommit;     // c.n
+//               uint32 nH;          // h.n
+//               Hash quorumSetHash; // D
+//           } confirm;
+//       case SCP_ST_EXTERNALIZE:
+//           struct
+//           {
+//               SCPBallot commit;         // c
+//               uint32 nH;                // h.n
+//               Hash commitQuorumSetHash; // D used before EXTERNALIZE
+//           } externalize;
+//       case SCP_ST_NOMINATE:
+//           SCPNomination nominate;
+//       }
+//
+// ===========================================================================
+xdr.union("ScpStatementPledges", {
+  switchOn: xdr.lookup("ScpStatementType"),
+  switchName: "type",
+  switches: [
+    ["scpStPrepare", "prepare"],
+    ["scpStConfirm", "confirm"],
+    ["scpStExternalize", "externalize"],
+    ["scpStNominate", "nominate"],
+  ],
+  arms: {
+    prepare: xdr.lookup("ScpStatementPrepare"),
+    confirm: xdr.lookup("ScpStatementConfirm"),
+    externalize: xdr.lookup("ScpStatementExternalize"),
+    nominate: xdr.lookup("ScpNomination"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   struct SCPStatement
+//   {
+//       NodeID nodeID;    // v
+//       uint64 slotIndex; // i
+//   
+//       union switch (SCPStatementType type)
+//       {
+//       case SCP_ST_PREPARE:
+//           struct
+//           {
+//               Hash quorumSetHash;       // D
+//               SCPBallot ballot;         // b
+//               SCPBallot* prepared;      // p
+//               SCPBallot* preparedPrime; // p'
+//               uint32 nC;                // c.n
+//               uint32 nH;                // h.n
+//           } prepare;
+//       case SCP_ST_CONFIRM:
+//           struct
+//           {
+//               SCPBallot ballot;   // b
+//               uint32 nPrepared;   // p.n
+//               uint32 nCommit;     // c.n
+//               uint32 nH;          // h.n
+//               Hash quorumSetHash; // D
+//           } confirm;
+//       case SCP_ST_EXTERNALIZE:
+//           struct
+//           {
+//               SCPBallot commit;         // c
+//               uint32 nH;                // h.n
+//               Hash commitQuorumSetHash; // D used before EXTERNALIZE
+//           } externalize;
+//       case SCP_ST_NOMINATE:
+//           SCPNomination nominate;
+//       }
+//       pledges;
+//   };
+//
+// ===========================================================================
+xdr.struct("ScpStatement", [
+  ["nodeId", xdr.lookup("NodeId")],
+  ["slotIndex", xdr.lookup("Uint64")],
+  ["pledges", xdr.lookup("ScpStatementPledges")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct SCPEnvelope
+//   {
+//       SCPStatement statement;
+//       Signature signature;
+//   };
+//
+// ===========================================================================
+xdr.struct("ScpEnvelope", [
+  ["statement", xdr.lookup("ScpStatement")],
+  ["signature", xdr.lookup("Signature")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct SCPQuorumSet
+//   {
+//       uint32 threshold;
+//       NodeID validators<>;
+//       SCPQuorumSet innerSets<>;
+//   };
+//
+// ===========================================================================
+xdr.struct("ScpQuorumSet", [
+  ["threshold", xdr.lookup("Uint32")],
+  ["validators", xdr.varArray(xdr.lookup("NodeId"), 2147483647)],
+  ["innerSets", xdr.varArray(xdr.lookup("ScpQuorumSet"), 2147483647)],
+]);
+
+// === xdr source ============================================================
+//
+//   typedef string SCSymbol<10>;
+//
+// ===========================================================================
+xdr.typedef("ScSymbol", xdr.string(10));
+
+// === xdr source ============================================================
+//
+//   enum SCLedgerValType
+//   {
+//       SCLV_MUXEDACCOUNT = 0,
+//       SCLV_ASSET = 1,
+//       SCLV_AMOUNT = 2,
+//       SCLV_ASSET_AMOUNT = 3,
+//       SCLV_PRICE = 4,
+//       SCLV_TIMEPOINT = 5
+//       // TODO: add more
+//   };
+//
+// ===========================================================================
+xdr.enum("ScLedgerValType", {
+  sclvMuxedaccount: 0,
+  sclvAsset: 1,
+  sclvAmount: 2,
+  sclvAssetAmount: 3,
+  sclvPrice: 4,
+  sclvTimepoint: 5,
+});
+
+// === xdr source ============================================================
+//
+//   struct {
+//               Asset assetVal;
+//               int64 amountVal;
+//           }
+//
+// ===========================================================================
+xdr.struct("ScLedgerValAssetAmountVal", [
+  ["assetVal", xdr.lookup("Asset")],
+  ["amountVal", xdr.lookup("Int64")],
+]);
+
+// === xdr source ============================================================
+//
+//   union SCLedgerVal switch (SCLedgerValType type) {
+//       case SCLV_MUXEDACCOUNT:
+//           MuxedAccount muxedAccountVal;
+//       case SCLV_ASSET:
+//           Asset assetVal;
+//       case SCLV_AMOUNT:
+//           int64 amountVal;
+//       case SCLV_ASSET_AMOUNT:
+//           struct {
+//               Asset assetVal;
+//               int64 amountVal;
+//           } assetAmountVal;
+//       case SCLV_PRICE:
+//           Price priceVal;
+//       case SCLV_TIMEPOINT:
+//           TimePoint timeVal;
+//   };
+//
+// ===========================================================================
+xdr.union("ScLedgerVal", {
+  switchOn: xdr.lookup("ScLedgerValType"),
+  switchName: "type",
+  switches: [
+    ["sclvMuxedaccount", "muxedAccountVal"],
+    ["sclvAsset", "assetVal"],
+    ["sclvAmount", "amountVal"],
+    ["sclvAssetAmount", "assetAmountVal"],
+    ["sclvPrice", "priceVal"],
+    ["sclvTimepoint", "timeVal"],
+  ],
+  arms: {
+    muxedAccountVal: xdr.lookup("MuxedAccount"),
+    assetVal: xdr.lookup("Asset"),
+    amountVal: xdr.lookup("Int64"),
+    assetAmountVal: xdr.lookup("ScLedgerValAssetAmountVal"),
+    priceVal: xdr.lookup("Price"),
+    timeVal: xdr.lookup("TimePoint"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   enum SCValType
+//   {
+//       SCV_U63 = 0,
+//       SCV_U32 = 1,
+//       SCV_I32 = 2,
+//       SCV_STATIC = 3,
+//       SCV_OBJECT = 4,
+//       SCV_SYMBOL = 5,
+//       SCV_BITSET = 6,
+//       SCV_STATUS = 7
+//    };
+//
+// ===========================================================================
+xdr.enum("ScValType", {
+  scvU63: 0,
+  scvU32: 1,
+  scvI32: 2,
+  scvStatic: 3,
+  scvObject: 4,
+  scvSymbol: 5,
+  scvBitset: 6,
+  scvStatus: 7,
+});
+
+// === xdr source ============================================================
+//
+//   enum SCStatic
+//   {
+//       SCS_VOID = 0,
+//       SCS_TRUE = 1,
+//       SCS_FALSE = 2
+//   };
+//
+// ===========================================================================
+xdr.enum("ScStatic", {
+  scsVoid: 0,
+  scsTrue: 1,
+  scsFalse: 2,
+});
+
+// === xdr source ============================================================
+//
+//   enum SCStatusType
+//   {
+//       SST_OK = 0,
+//       SST_UNKNOWN = 1,
+//       SST_WASM_TRAP_CODE = 2,
+//       SST_HOST_TRAP_CODE = 3,
+//       SST_PAYMENT_RESULT = 4,
+//       SST_INVOKE_CONTRACT_RESULT = 5
+//       // TODO: add more
+//   };
+//
+// ===========================================================================
+xdr.enum("ScStatusType", {
+  sstOk: 0,
+  sstUnknown: 1,
+  sstWasmTrapCode: 2,
+  sstHostTrapCode: 3,
+  sstPaymentResult: 4,
+  sstInvokeContractResult: 5,
+});
+
+// === xdr source ============================================================
+//
+//   union SCStatus switch (SCStatusType type) {
+//       case SST_OK:
+//           void;
+//       case SST_WASM_TRAP_CODE:
+//           WasmTrapCode wasmTrap;
+//       case SST_HOST_TRAP_CODE:
+//           HostTrapCode hostTrap;
+//       case SST_PAYMENT_RESULT:
+//           PaymentResultCode paymentResult;
+//       case SST_INVOKE_CONTRACT_RESULT:
+//           InvokeContractResultCode invokeResult;
+//       case SST_UNKNOWN:
+//           void;
+//   };
+//
+// ===========================================================================
+xdr.union("ScStatus", {
+  switchOn: xdr.lookup("ScStatusType"),
+  switchName: "type",
+  switches: [
+    ["sstOk", xdr.void()],
+    ["sstWasmTrapCode", "wasmTrap"],
+    ["sstHostTrapCode", "hostTrap"],
+    ["sstPaymentResult", "paymentResult"],
+    ["sstInvokeContractResult", "invokeResult"],
+    ["sstUnknown", xdr.void()],
+  ],
+  arms: {
+    wasmTrap: xdr.lookup("WasmTrapCode"),
+    hostTrap: xdr.lookup("HostTrapCode"),
+    paymentResult: xdr.lookup("PaymentResultCode"),
+    invokeResult: xdr.lookup("InvokeContractResultCode"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   union SCVal switch (SCValType type) {
+//       case SCV_U63:
+//           uint64 u63;
+//       case SCV_U32:
+//           uint32 u32;
+//       case SCV_I32:
+//           int32 i32;
+//       case SCV_STATIC:
+//           SCStatic ic;
+//       case SCV_OBJECT:
+//           SCObject *obj;
+//       case SCV_SYMBOL:
+//           SCSymbol sym;
+//       case SCV_BITSET:
+//           uint64 bits;
+//       case SCV_STATUS:
+//           SCStatus status;
+//   };
+//
+// ===========================================================================
+xdr.union("ScVal", {
+  switchOn: xdr.lookup("ScValType"),
+  switchName: "type",
+  switches: [
+    ["scvU63", "u63"],
+    ["scvU32", "u32"],
+    ["scvI32", "i32"],
+    ["scvStatic", "ic"],
+    ["scvObject", "obj"],
+    ["scvSymbol", "sym"],
+    ["scvBitset", "bits"],
+    ["scvStatus", "status"],
+  ],
+  arms: {
+    u63: xdr.lookup("Uint64"),
+    u32: xdr.lookup("Uint32"),
+    i32: xdr.lookup("Int32"),
+    ic: xdr.lookup("ScStatic"),
+    obj: xdr.option(xdr.lookup("ScObject")),
+    sym: xdr.lookup("ScSymbol"),
+    bits: xdr.lookup("Uint64"),
+    status: xdr.lookup("ScStatus"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   enum SCObjectType {
+//       SCO_BOX = 0,
+//       SCO_VEC = 1,
+//       SCO_MAP = 2,
+//       SCO_U64 = 3,
+//       SCO_I64 = 4,
+//       SCO_STRING = 5,
+//       SCO_BINARY = 6,
+//       SCO_LEDGERKEY = 7,
+//       SCO_LEDGERVAL = 8,
+//       SCO_OPERATION = 9,
+//       SCO_OPERATION_RESULT = 10,
+//       SCO_TRANSACTION = 11,
+//       SCO_BIGNUM = 12
+//   };
+//
+// ===========================================================================
+xdr.enum("ScObjectType", {
+  scoBox: 0,
+  scoVec: 1,
+  scoMap: 2,
+  scoU64: 3,
+  scoI64: 4,
+  scoString: 5,
+  scoBinary: 6,
+  scoLedgerkey: 7,
+  scoLedgerval: 8,
+  scoOperation: 9,
+  scoOperationResult: 10,
+  scoTransaction: 11,
+  scoBignum: 12,
+});
+
+// === xdr source ============================================================
+//
+//   struct SCMapEntry {
+//       SCVal key;
+//       SCVal val;
+//   };
+//
+// ===========================================================================
+xdr.struct("ScMapEntry", [
+  ["key", xdr.lookup("ScVal")],
+  ["val", xdr.lookup("ScVal")],
+]);
+
+// === xdr source ============================================================
+//
+//   typedef SCVal SCVec<>;
+//
+// ===========================================================================
+xdr.typedef("ScVec", xdr.varArray(xdr.lookup("ScVal"), 2147483647));
+
+// === xdr source ============================================================
+//
+//   typedef SCMapEntry SCMap<>;
+//
+// ===========================================================================
+xdr.typedef("ScMap", xdr.varArray(xdr.lookup("ScMapEntry"), 2147483647));
+
+// === xdr source ============================================================
+//
+//   struct SCBigNum {
+//       bool positive;
+//       opaque magnitude<>;
+//   };
+//
+// ===========================================================================
+xdr.struct("ScBigNum", [
+  ["positive", xdr.bool()],
+  ["magnitude", xdr.varOpaque()],
+]);
+
+// === xdr source ============================================================
+//
+//   union SCObject switch (SCObjectType type) {
+//       case SCO_BOX:
+//           SCVal box;
+//       case SCO_VEC:
+//           SCVec vec;
+//       case SCO_MAP:
+//           SCMap map;
+//       case SCO_U64:
+//           uint64 u64;
+//       case SCO_I64:
+//           int64 i64;
+//       case SCO_STRING:
+//           string str<>;
+//       case SCO_BINARY:
+//           opaque bin<>;
+//       case SCO_LEDGERKEY:
+//           LedgerKey lkey;
+//       case SCO_LEDGERVAL:
+//           SCLedgerVal lval;
+//       case SCO_OPERATION:
+//           Operation *op;
+//       case SCO_OPERATION_RESULT:
+//           OperationResult *ores;
+//       case SCO_TRANSACTION:
+//           Transaction *tx;
+//       case SCO_BIGNUM:
+//           SCBigNum bn;
+//   };
+//
+// ===========================================================================
+xdr.union("ScObject", {
+  switchOn: xdr.lookup("ScObjectType"),
+  switchName: "type",
+  switches: [
+    ["scoBox", "box"],
+    ["scoVec", "vec"],
+    ["scoMap", "map"],
+    ["scoU64", "u64"],
+    ["scoI64", "i64"],
+    ["scoString", "str"],
+    ["scoBinary", "bin"],
+    ["scoLedgerkey", "lkey"],
+    ["scoLedgerval", "lval"],
+    ["scoOperation", "op"],
+    ["scoOperationResult", "ores"],
+    ["scoTransaction", "tx"],
+    ["scoBignum", "bn"],
+  ],
+  arms: {
+    box: xdr.lookup("ScVal"),
+    vec: xdr.lookup("ScVec"),
+    map: xdr.lookup("ScMap"),
+    u64: xdr.lookup("Uint64"),
+    i64: xdr.lookup("Int64"),
+    str: xdr.string(),
+    bin: xdr.varOpaque(),
+    lkey: xdr.lookup("LedgerKey"),
+    lval: xdr.lookup("ScLedgerVal"),
+    op: xdr.option(xdr.lookup("Operation")),
+    ores: xdr.option(xdr.lookup("OperationResult")),
+    tx: xdr.option(xdr.lookup("Transaction")),
+    bn: xdr.lookup("ScBigNum"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   struct SCEnvEntry {
+//       SCSymbol key;
+//       SCVal val;
+//   };
+//
+// ===========================================================================
+xdr.struct("ScEnvEntry", [
+  ["key", xdr.lookup("ScSymbol")],
+  ["val", xdr.lookup("ScVal")],
+]);
+
+// === xdr source ============================================================
+//
+//   typedef SCEnvEntry SCEnv<>;
+//
+// ===========================================================================
+xdr.typedef("ScEnv", xdr.varArray(xdr.lookup("ScEnvEntry"), 2147483647));
 
 // === xdr source ============================================================
 //
@@ -53,13 +692,6 @@ xdr.typedef("TimePoint", xdr.lookup("Uint64"));
 
 // === xdr source ============================================================
 //
-//   typedef uint64 Duration;
-//
-// ===========================================================================
-xdr.typedef("Duration", xdr.lookup("Uint64"));
-
-// === xdr source ============================================================
-//
 //   typedef opaque DataValue<64>;
 //
 // ===========================================================================
@@ -71,6 +703,13 @@ xdr.typedef("DataValue", xdr.varOpaque(64));
 //
 // ===========================================================================
 xdr.typedef("PoolId", xdr.lookup("Hash"));
+
+// === xdr source ============================================================
+//
+//   typedef opaque WASMCode<65536>;
+//
+// ===========================================================================
+xdr.typedef("WasmCode", xdr.varOpaque(65536));
 
 // === xdr source ============================================================
 //
@@ -245,7 +884,9 @@ xdr.enum("ThresholdIndices", {
 //       OFFER = 2,
 //       DATA = 3,
 //       CLAIMABLE_BALANCE = 4,
-//       LIQUIDITY_POOL = 5
+//       LIQUIDITY_POOL = 5,
+//       CONTRACT_CODE = 6,
+//       CONTRACT_DATA = 7
 //   };
 //
 // ===========================================================================
@@ -256,6 +897,8 @@ xdr.enum("LedgerEntryType", {
   data: 3,
   claimableBalance: 4,
   liquidityPool: 5,
+  contractCode: 6,
+  contractData: 7,
 });
 
 // === xdr source ============================================================
@@ -330,34 +973,10 @@ xdr.typedef("SponsorshipDescriptor", xdr.option(xdr.lookup("AccountId")));
 
 // === xdr source ============================================================
 //
-//   struct AccountEntryExtensionV3
-//   {
-//       // We can use this to add more fields, or because it is first, to
-//       // change AccountEntryExtensionV3 into a union.
-//       ExtensionPoint ext;
-//   
-//       // Ledger number at which `seqNum` took on its present value.
-//       uint32 seqLedger;
-//   
-//       // Time at which `seqNum` took on its present value.
-//       TimePoint seqTime;
-//   };
-//
-// ===========================================================================
-xdr.struct("AccountEntryExtensionV3", [
-  ["ext", xdr.lookup("ExtensionPoint")],
-  ["seqLedger", xdr.lookup("Uint32")],
-  ["seqTime", xdr.lookup("TimePoint")],
-]);
-
-// === xdr source ============================================================
-//
 //   union switch (int v)
 //       {
 //       case 0:
 //           void;
-//       case 3:
-//           AccountEntryExtensionV3 v3;
 //       }
 //
 // ===========================================================================
@@ -366,10 +985,8 @@ xdr.union("AccountEntryExtensionV2Ext", {
   switchName: "v",
   switches: [
     [0, xdr.void()],
-    [3, "v3"],
   ],
   arms: {
-    v3: xdr.lookup("AccountEntryExtensionV3"),
   },
 });
 
@@ -385,8 +1002,6 @@ xdr.union("AccountEntryExtensionV2Ext", {
 //       {
 //       case 0:
 //           void;
-//       case 3:
-//           AccountEntryExtensionV3 v3;
 //       }
 //       ext;
 //   };
@@ -770,8 +1385,7 @@ xdr.struct("TrustLineEntry", [
 //
 //   enum OfferEntryFlags
 //   {
-//       // an offer with this flag will not act on and take a reverse offer of equal
-//       // price
+//       // an offer with this flag will not act on and take a reverse offer of equal price
 //       PASSIVE_FLAG = 1
 //   };
 //
@@ -1158,7 +1772,7 @@ xdr.struct("ClaimableBalanceEntry", [
 //   {
 //       Asset assetA; // assetA < assetB
 //       Asset assetB;
-//       int32 fee; // Fee is in basis points, so the actual rate is (fee/100)%
+//       int32 fee;    // Fee is in basis points, so the actual rate is (fee/100)%
 //   };
 //
 // ===========================================================================
@@ -1177,8 +1791,7 @@ xdr.struct("LiquidityPoolConstantProductParameters", [
 //               int64 reserveA;        // amount of A in the pool
 //               int64 reserveB;        // amount of B in the pool
 //               int64 totalPoolShares; // total number of pool shares issued
-//               int64 poolSharesTrustLineCount; // number of trust lines for the
-//                                               // associated pool shares
+//               int64 poolSharesTrustLineCount; // number of trust lines for the associated pool shares
 //           }
 //
 // ===========================================================================
@@ -1202,8 +1815,7 @@ xdr.struct("LiquidityPoolEntryConstantProduct", [
 //               int64 reserveA;        // amount of A in the pool
 //               int64 reserveB;        // amount of B in the pool
 //               int64 totalPoolShares; // total number of pool shares issued
-//               int64 poolSharesTrustLineCount; // number of trust lines for the
-//                                               // associated pool shares
+//               int64 poolSharesTrustLineCount; // number of trust lines for the associated pool shares
 //           } constantProduct;
 //       }
 //
@@ -1235,8 +1847,7 @@ xdr.union("LiquidityPoolEntryBody", {
 //               int64 reserveA;        // amount of A in the pool
 //               int64 reserveB;        // amount of B in the pool
 //               int64 totalPoolShares; // total number of pool shares issued
-//               int64 poolSharesTrustLineCount; // number of trust lines for the
-//                                               // associated pool shares
+//               int64 poolSharesTrustLineCount; // number of trust lines for the associated pool shares
 //           } constantProduct;
 //       }
 //       body;
@@ -1246,6 +1857,73 @@ xdr.union("LiquidityPoolEntryBody", {
 xdr.struct("LiquidityPoolEntry", [
   ["liquidityPoolId", xdr.lookup("PoolId")],
   ["body", xdr.lookup("LiquidityPoolEntryBody")],
+]);
+
+// === xdr source ============================================================
+//
+//   enum ContractCodeType {
+//       CONTRACT_CODE_WASM = 0
+//   };
+//
+// ===========================================================================
+xdr.enum("ContractCodeType", {
+  contractCodeWasm: 0,
+});
+
+// === xdr source ============================================================
+//
+//   union switch (ContractCodeType type)
+//       {
+//       case CONTRACT_CODE_WASM:
+//           WASMCode wasm;
+//       }
+//
+// ===========================================================================
+xdr.union("ContractCodeEntryBody", {
+  switchOn: xdr.lookup("ContractCodeType"),
+  switchName: "type",
+  switches: [
+    ["contractCodeWasm", "wasm"],
+  ],
+  arms: {
+    wasm: xdr.lookup("WasmCode"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   struct ContractCodeEntry {
+//       AccountID owner;
+//       int64 contractID;
+//       union switch (ContractCodeType type)
+//       {
+//       case CONTRACT_CODE_WASM:
+//           WASMCode wasm;
+//       } body;
+//   };
+//
+// ===========================================================================
+xdr.struct("ContractCodeEntry", [
+  ["owner", xdr.lookup("AccountId")],
+  ["contractId", xdr.lookup("Int64")],
+  ["body", xdr.lookup("ContractCodeEntryBody")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct ContractDataEntry {
+//       AccountID owner;
+//       int64 contractID;
+//       SCVal *key;
+//       SCVal *val;
+//   };
+//
+// ===========================================================================
+xdr.struct("ContractDataEntry", [
+  ["owner", xdr.lookup("AccountId")],
+  ["contractId", xdr.lookup("Int64")],
+  ["key", xdr.option(xdr.lookup("ScVal"))],
+  ["val", xdr.option(xdr.lookup("ScVal"))],
 ]);
 
 // === xdr source ============================================================
@@ -1303,6 +1981,10 @@ xdr.struct("LedgerEntryExtensionV1", [
 //           ClaimableBalanceEntry claimableBalance;
 //       case LIQUIDITY_POOL:
 //           LiquidityPoolEntry liquidityPool;
+//       case CONTRACT_CODE:
+//           ContractCodeEntry contractCode;
+//       case CONTRACT_DATA:
+//           ContractDataEntry contractData;
 //       }
 //
 // ===========================================================================
@@ -1316,6 +1998,8 @@ xdr.union("LedgerEntryData", {
     ["data", "data"],
     ["claimableBalance", "claimableBalance"],
     ["liquidityPool", "liquidityPool"],
+    ["contractCode", "contractCode"],
+    ["contractData", "contractData"],
   ],
   arms: {
     account: xdr.lookup("AccountEntry"),
@@ -1324,6 +2008,8 @@ xdr.union("LedgerEntryData", {
     data: xdr.lookup("DataEntry"),
     claimableBalance: xdr.lookup("ClaimableBalanceEntry"),
     liquidityPool: xdr.lookup("LiquidityPoolEntry"),
+    contractCode: xdr.lookup("ContractCodeEntry"),
+    contractData: xdr.lookup("ContractDataEntry"),
   },
 });
 
@@ -1370,6 +2056,10 @@ xdr.union("LedgerEntryExt", {
 //           ClaimableBalanceEntry claimableBalance;
 //       case LIQUIDITY_POOL:
 //           LiquidityPoolEntry liquidityPool;
+//       case CONTRACT_CODE:
+//           ContractCodeEntry contractCode;
+//       case CONTRACT_DATA:
+//           ContractDataEntry contractData;
 //       }
 //       data;
 //   
@@ -1471,6 +2161,36 @@ xdr.struct("LedgerKeyLiquidityPool", [
 
 // === xdr source ============================================================
 //
+//   struct
+//       {
+//           AccountID owner;
+//           int64 contractID;
+//       }
+//
+// ===========================================================================
+xdr.struct("LedgerKeyContractCode", [
+  ["owner", xdr.lookup("AccountId")],
+  ["contractId", xdr.lookup("Int64")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct
+//       {
+//           AccountID owner;
+//           int64 contractID;
+//           SCVal *key;
+//       }
+//
+// ===========================================================================
+xdr.struct("LedgerKeyContractData", [
+  ["owner", xdr.lookup("AccountId")],
+  ["contractId", xdr.lookup("Int64")],
+  ["key", xdr.option(xdr.lookup("ScVal"))],
+]);
+
+// === xdr source ============================================================
+//
 //   union LedgerKey switch (LedgerEntryType type)
 //   {
 //   case ACCOUNT:
@@ -1511,6 +2231,19 @@ xdr.struct("LedgerKeyLiquidityPool", [
 //       {
 //           PoolID liquidityPoolID;
 //       } liquidityPool;
+//   case CONTRACT_CODE:
+//       struct
+//       {
+//           AccountID owner;
+//           int64 contractID;
+//       } contractCode;
+//   case CONTRACT_DATA:
+//       struct
+//       {
+//           AccountID owner;
+//           int64 contractID;
+//           SCVal *key;
+//       } contractData;
 //   };
 //
 // ===========================================================================
@@ -1524,6 +2257,8 @@ xdr.union("LedgerKey", {
     ["data", "data"],
     ["claimableBalance", "claimableBalance"],
     ["liquidityPool", "liquidityPool"],
+    ["contractCode", "contractCode"],
+    ["contractData", "contractData"],
   ],
   arms: {
     account: xdr.lookup("LedgerKeyAccount"),
@@ -1532,6 +2267,8 @@ xdr.union("LedgerKey", {
     data: xdr.lookup("LedgerKeyData"),
     claimableBalance: xdr.lookup("LedgerKeyClaimableBalance"),
     liquidityPool: xdr.lookup("LedgerKeyLiquidityPool"),
+    contractCode: xdr.lookup("LedgerKeyContractCode"),
+    contractData: xdr.lookup("LedgerKeyContractData"),
   },
 });
 
@@ -2901,249 +3638,6 @@ xdr.union("AuthenticatedMessage", {
 
 // === xdr source ============================================================
 //
-//   typedef opaque Value<>;
-//
-// ===========================================================================
-xdr.typedef("Value", xdr.varOpaque());
-
-// === xdr source ============================================================
-//
-//   struct SCPBallot
-//   {
-//       uint32 counter; // n
-//       Value value;    // x
-//   };
-//
-// ===========================================================================
-xdr.struct("ScpBallot", [
-  ["counter", xdr.lookup("Uint32")],
-  ["value", xdr.lookup("Value")],
-]);
-
-// === xdr source ============================================================
-//
-//   enum SCPStatementType
-//   {
-//       SCP_ST_PREPARE = 0,
-//       SCP_ST_CONFIRM = 1,
-//       SCP_ST_EXTERNALIZE = 2,
-//       SCP_ST_NOMINATE = 3
-//   };
-//
-// ===========================================================================
-xdr.enum("ScpStatementType", {
-  scpStPrepare: 0,
-  scpStConfirm: 1,
-  scpStExternalize: 2,
-  scpStNominate: 3,
-});
-
-// === xdr source ============================================================
-//
-//   struct SCPNomination
-//   {
-//       Hash quorumSetHash; // D
-//       Value votes<>;      // X
-//       Value accepted<>;   // Y
-//   };
-//
-// ===========================================================================
-xdr.struct("ScpNomination", [
-  ["quorumSetHash", xdr.lookup("Hash")],
-  ["votes", xdr.varArray(xdr.lookup("Value"), 2147483647)],
-  ["accepted", xdr.varArray(xdr.lookup("Value"), 2147483647)],
-]);
-
-// === xdr source ============================================================
-//
-//   struct
-//           {
-//               Hash quorumSetHash;       // D
-//               SCPBallot ballot;         // b
-//               SCPBallot* prepared;      // p
-//               SCPBallot* preparedPrime; // p'
-//               uint32 nC;                // c.n
-//               uint32 nH;                // h.n
-//           }
-//
-// ===========================================================================
-xdr.struct("ScpStatementPrepare", [
-  ["quorumSetHash", xdr.lookup("Hash")],
-  ["ballot", xdr.lookup("ScpBallot")],
-  ["prepared", xdr.option(xdr.lookup("ScpBallot"))],
-  ["preparedPrime", xdr.option(xdr.lookup("ScpBallot"))],
-  ["nC", xdr.lookup("Uint32")],
-  ["nH", xdr.lookup("Uint32")],
-]);
-
-// === xdr source ============================================================
-//
-//   struct
-//           {
-//               SCPBallot ballot;   // b
-//               uint32 nPrepared;   // p.n
-//               uint32 nCommit;     // c.n
-//               uint32 nH;          // h.n
-//               Hash quorumSetHash; // D
-//           }
-//
-// ===========================================================================
-xdr.struct("ScpStatementConfirm", [
-  ["ballot", xdr.lookup("ScpBallot")],
-  ["nPrepared", xdr.lookup("Uint32")],
-  ["nCommit", xdr.lookup("Uint32")],
-  ["nH", xdr.lookup("Uint32")],
-  ["quorumSetHash", xdr.lookup("Hash")],
-]);
-
-// === xdr source ============================================================
-//
-//   struct
-//           {
-//               SCPBallot commit;         // c
-//               uint32 nH;                // h.n
-//               Hash commitQuorumSetHash; // D used before EXTERNALIZE
-//           }
-//
-// ===========================================================================
-xdr.struct("ScpStatementExternalize", [
-  ["commit", xdr.lookup("ScpBallot")],
-  ["nH", xdr.lookup("Uint32")],
-  ["commitQuorumSetHash", xdr.lookup("Hash")],
-]);
-
-// === xdr source ============================================================
-//
-//   union switch (SCPStatementType type)
-//       {
-//       case SCP_ST_PREPARE:
-//           struct
-//           {
-//               Hash quorumSetHash;       // D
-//               SCPBallot ballot;         // b
-//               SCPBallot* prepared;      // p
-//               SCPBallot* preparedPrime; // p'
-//               uint32 nC;                // c.n
-//               uint32 nH;                // h.n
-//           } prepare;
-//       case SCP_ST_CONFIRM:
-//           struct
-//           {
-//               SCPBallot ballot;   // b
-//               uint32 nPrepared;   // p.n
-//               uint32 nCommit;     // c.n
-//               uint32 nH;          // h.n
-//               Hash quorumSetHash; // D
-//           } confirm;
-//       case SCP_ST_EXTERNALIZE:
-//           struct
-//           {
-//               SCPBallot commit;         // c
-//               uint32 nH;                // h.n
-//               Hash commitQuorumSetHash; // D used before EXTERNALIZE
-//           } externalize;
-//       case SCP_ST_NOMINATE:
-//           SCPNomination nominate;
-//       }
-//
-// ===========================================================================
-xdr.union("ScpStatementPledges", {
-  switchOn: xdr.lookup("ScpStatementType"),
-  switchName: "type",
-  switches: [
-    ["scpStPrepare", "prepare"],
-    ["scpStConfirm", "confirm"],
-    ["scpStExternalize", "externalize"],
-    ["scpStNominate", "nominate"],
-  ],
-  arms: {
-    prepare: xdr.lookup("ScpStatementPrepare"),
-    confirm: xdr.lookup("ScpStatementConfirm"),
-    externalize: xdr.lookup("ScpStatementExternalize"),
-    nominate: xdr.lookup("ScpNomination"),
-  },
-});
-
-// === xdr source ============================================================
-//
-//   struct SCPStatement
-//   {
-//       NodeID nodeID;    // v
-//       uint64 slotIndex; // i
-//   
-//       union switch (SCPStatementType type)
-//       {
-//       case SCP_ST_PREPARE:
-//           struct
-//           {
-//               Hash quorumSetHash;       // D
-//               SCPBallot ballot;         // b
-//               SCPBallot* prepared;      // p
-//               SCPBallot* preparedPrime; // p'
-//               uint32 nC;                // c.n
-//               uint32 nH;                // h.n
-//           } prepare;
-//       case SCP_ST_CONFIRM:
-//           struct
-//           {
-//               SCPBallot ballot;   // b
-//               uint32 nPrepared;   // p.n
-//               uint32 nCommit;     // c.n
-//               uint32 nH;          // h.n
-//               Hash quorumSetHash; // D
-//           } confirm;
-//       case SCP_ST_EXTERNALIZE:
-//           struct
-//           {
-//               SCPBallot commit;         // c
-//               uint32 nH;                // h.n
-//               Hash commitQuorumSetHash; // D used before EXTERNALIZE
-//           } externalize;
-//       case SCP_ST_NOMINATE:
-//           SCPNomination nominate;
-//       }
-//       pledges;
-//   };
-//
-// ===========================================================================
-xdr.struct("ScpStatement", [
-  ["nodeId", xdr.lookup("NodeId")],
-  ["slotIndex", xdr.lookup("Uint64")],
-  ["pledges", xdr.lookup("ScpStatementPledges")],
-]);
-
-// === xdr source ============================================================
-//
-//   struct SCPEnvelope
-//   {
-//       SCPStatement statement;
-//       Signature signature;
-//   };
-//
-// ===========================================================================
-xdr.struct("ScpEnvelope", [
-  ["statement", xdr.lookup("ScpStatement")],
-  ["signature", xdr.lookup("Signature")],
-]);
-
-// === xdr source ============================================================
-//
-//   struct SCPQuorumSet
-//   {
-//       uint32 threshold;
-//       NodeID validators<>;
-//       SCPQuorumSet innerSets<>;
-//   };
-//
-// ===========================================================================
-xdr.struct("ScpQuorumSet", [
-  ["threshold", xdr.lookup("Uint32")],
-  ["validators", xdr.varArray(xdr.lookup("NodeId"), 2147483647)],
-  ["innerSets", xdr.varArray(xdr.lookup("ScpQuorumSet"), 2147483647)],
-]);
-
-// === xdr source ============================================================
-//
 //   union LiquidityPoolParameters switch (LiquidityPoolType type)
 //   {
 //   case LIQUIDITY_POOL_CONSTANT_PRODUCT:
@@ -3159,48 +3653,6 @@ xdr.union("LiquidityPoolParameters", {
   ],
   arms: {
     constantProduct: xdr.lookup("LiquidityPoolConstantProductParameters"),
-  },
-});
-
-// === xdr source ============================================================
-//
-//   struct
-//       {
-//           uint64 id;
-//           uint256 ed25519;
-//       }
-//
-// ===========================================================================
-xdr.struct("MuxedAccountMed25519", [
-  ["id", xdr.lookup("Uint64")],
-  ["ed25519", xdr.lookup("Uint256")],
-]);
-
-// === xdr source ============================================================
-//
-//   union MuxedAccount switch (CryptoKeyType type)
-//   {
-//   case KEY_TYPE_ED25519:
-//       uint256 ed25519;
-//   case KEY_TYPE_MUXED_ED25519:
-//       struct
-//       {
-//           uint64 id;
-//           uint256 ed25519;
-//       } med25519;
-//   };
-//
-// ===========================================================================
-xdr.union("MuxedAccount", {
-  switchOn: xdr.lookup("CryptoKeyType"),
-  switchName: "type",
-  switches: [
-    ["keyTypeEd25519", "ed25519"],
-    ["keyTypeMuxedEd25519", "med25519"],
-  ],
-  arms: {
-    ed25519: xdr.lookup("Uint256"),
-    med25519: xdr.lookup("MuxedAccountMed25519"),
   },
 });
 
@@ -3245,7 +3697,9 @@ xdr.struct("DecoratedSignature", [
 //       CLAWBACK_CLAIMABLE_BALANCE = 20,
 //       SET_TRUST_LINE_FLAGS = 21,
 //       LIQUIDITY_POOL_DEPOSIT = 22,
-//       LIQUIDITY_POOL_WITHDRAW = 23
+//       LIQUIDITY_POOL_WITHDRAW = 23,
+//       MANAGE_CONTRACT = 24,
+//       INVOKE_CONTRACT = 25
 //   };
 //
 // ===========================================================================
@@ -3274,6 +3728,8 @@ xdr.enum("OperationType", {
   setTrustLineFlags: 21,
   liquidityPoolDeposit: 22,
   liquidityPoolWithdraw: 23,
+  manageContract: 24,
+  invokeContract: 25,
 });
 
 // === xdr source ============================================================
@@ -3707,10 +4163,10 @@ xdr.const("LIQUIDITY_POOL_FEE_V18", 30);
 //   struct LiquidityPoolDepositOp
 //   {
 //       PoolID liquidityPoolID;
-//       int64 maxAmountA; // maximum amount of first asset to deposit
-//       int64 maxAmountB; // maximum amount of second asset to deposit
-//       Price minPrice;   // minimum depositA/depositB
-//       Price maxPrice;   // maximum depositA/depositB
+//       int64 maxAmountA;     // maximum amount of first asset to deposit
+//       int64 maxAmountB;     // maximum amount of second asset to deposit
+//       Price minPrice;       // minimum depositA/depositB
+//       Price maxPrice;       // maximum depositA/depositB
 //   };
 //
 // ===========================================================================
@@ -3727,9 +4183,9 @@ xdr.struct("LiquidityPoolDepositOp", [
 //   struct LiquidityPoolWithdrawOp
 //   {
 //       PoolID liquidityPoolID;
-//       int64 amount;     // amount of pool shares to withdraw
-//       int64 minAmountA; // minimum amount of first asset to withdraw
-//       int64 minAmountB; // minimum amount of second asset to withdraw
+//       int64 amount;         // amount of pool shares to withdraw
+//       int64 minAmountA;     // minimum amount of first asset to withdraw
+//       int64 minAmountB;     // minimum amount of second asset to withdraw
 //   };
 //
 // ===========================================================================
@@ -3738,6 +4194,77 @@ xdr.struct("LiquidityPoolWithdrawOp", [
   ["amount", xdr.lookup("Int64")],
   ["minAmountA", xdr.lookup("Int64")],
   ["minAmountB", xdr.lookup("Int64")],
+]);
+
+// === xdr source ============================================================
+//
+//   union switch (ContractCodeType type)
+//       {
+//           case CONTRACT_CODE_WASM:
+//               WASMCode wasm;
+//           default:
+//               void;
+//       }
+//
+// ===========================================================================
+xdr.union("ManageContractOpBody", {
+  switchOn: xdr.lookup("ContractCodeType"),
+  switchName: "type",
+  switches: [
+    ["contractCodeWasm", "wasm"],
+  ],
+  arms: {
+    wasm: xdr.lookup("WasmCode"),
+  },
+  defaultArm: xdr.void(),
+});
+
+// === xdr source ============================================================
+//
+//   struct ManageContractOp
+//   {
+//       int64 contractID;
+//       union switch (ContractCodeType type)
+//       {
+//           case CONTRACT_CODE_WASM:
+//               WASMCode wasm;
+//           default:
+//               void;
+//       } *body;
+//   };
+//
+// ===========================================================================
+xdr.struct("ManageContractOp", [
+  ["contractId", xdr.lookup("Int64")],
+  ["body", xdr.lookup("ManageContractOpBody")],
+]);
+
+// === xdr source ============================================================
+//
+//   struct InvokeContractOp
+//   {
+//       AccountID owner;
+//       int64 contractID;
+//       SCEnv locals; // Any op-local values to add to environment.
+//       LedgerKey readSet<>; // Worst-case set keys to read.
+//       LedgerKey writeSet<>; // Worst-case set of keys to write (or read).
+//       SCSymbol function; // Function to invoke in contract.
+//       SCSymbol arguments<>; // Args to take from env and pass to function.
+//       SCSymbol *definition; // Optional env entry to update with result.
+//       SCSymbol *predicate; // Optional env entry to predicate call on non-Status-error value of.
+//   };
+//
+// ===========================================================================
+xdr.struct("InvokeContractOp", [
+  ["owner", xdr.lookup("AccountId")],
+  ["contractId", xdr.lookup("Int64")],
+  ["locals", xdr.lookup("ScEnv")],
+  ["readSet", xdr.varArray(xdr.lookup("LedgerKey"), 2147483647)],
+  ["writeSet", xdr.varArray(xdr.lookup("LedgerKey"), 2147483647)],
+  ["function", xdr.lookup("ScSymbol")],
+  ["arguments", xdr.varArray(xdr.lookup("ScSymbol"), 2147483647)],
+  ["definition", xdr.option(xdr.lookup("ScSymbol"))],
+  ["predicate", xdr.option(xdr.lookup("ScSymbol"))],
 ]);
 
 // === xdr source ============================================================
@@ -3792,6 +4319,10 @@ xdr.struct("LiquidityPoolWithdrawOp", [
 //           LiquidityPoolDepositOp liquidityPoolDepositOp;
 //       case LIQUIDITY_POOL_WITHDRAW:
 //           LiquidityPoolWithdrawOp liquidityPoolWithdrawOp;
+//       case MANAGE_CONTRACT:
+//           ManageContractOp manageContractOp;
+//       case INVOKE_CONTRACT:
+//           InvokeContractOp invokeContractOp;
 //       }
 //
 // ===========================================================================
@@ -3823,6 +4354,8 @@ xdr.union("OperationBody", {
     ["setTrustLineFlags", "setTrustLineFlagsOp"],
     ["liquidityPoolDeposit", "liquidityPoolDepositOp"],
     ["liquidityPoolWithdraw", "liquidityPoolWithdrawOp"],
+    ["manageContract", "manageContractOp"],
+    ["invokeContract", "invokeContractOp"],
   ],
   arms: {
     createAccountOp: xdr.lookup("CreateAccountOp"),
@@ -3847,6 +4380,8 @@ xdr.union("OperationBody", {
     setTrustLineFlagsOp: xdr.lookup("SetTrustLineFlagsOp"),
     liquidityPoolDepositOp: xdr.lookup("LiquidityPoolDepositOp"),
     liquidityPoolWithdrawOp: xdr.lookup("LiquidityPoolWithdrawOp"),
+    manageContractOp: xdr.lookup("ManageContractOp"),
+    invokeContractOp: xdr.lookup("InvokeContractOp"),
   },
 });
 
@@ -3909,6 +4444,10 @@ xdr.union("OperationBody", {
 //           LiquidityPoolDepositOp liquidityPoolDepositOp;
 //       case LIQUIDITY_POOL_WITHDRAW:
 //           LiquidityPoolWithdrawOp liquidityPoolWithdrawOp;
+//       case MANAGE_CONTRACT:
+//           ManageContractOp manageContractOp;
+//       case INVOKE_CONTRACT:
+//           InvokeContractOp invokeContractOp;
 //       }
 //       body;
 //   };
@@ -4062,108 +4601,6 @@ xdr.struct("TimeBounds", [
 
 // === xdr source ============================================================
 //
-//   struct LedgerBounds
-//   {
-//       uint32 minLedger;
-//       uint32 maxLedger; // 0 here means no maxLedger
-//   };
-//
-// ===========================================================================
-xdr.struct("LedgerBounds", [
-  ["minLedger", xdr.lookup("Uint32")],
-  ["maxLedger", xdr.lookup("Uint32")],
-]);
-
-// === xdr source ============================================================
-//
-//   struct PreconditionsV2
-//   {
-//       TimeBounds* timeBounds;
-//   
-//       // Transaction only valid for ledger numbers n such that
-//       // minLedger <= n < maxLedger (if maxLedger == 0, then
-//       // only minLedger is checked)
-//       LedgerBounds* ledgerBounds;
-//   
-//       // If NULL, only valid when sourceAccount's sequence number
-//       // is seqNum - 1.  Otherwise, valid when sourceAccount's
-//       // sequence number n satisfies minSeqNum <= n < tx.seqNum.
-//       // Note that after execution the account's sequence number
-//       // is always raised to tx.seqNum, and a transaction is not
-//       // valid if tx.seqNum is too high to ensure replay protection.
-//       SequenceNumber* minSeqNum;
-//   
-//       // For the transaction to be valid, the current ledger time must
-//       // be at least minSeqAge greater than sourceAccount's seqTime.
-//       Duration minSeqAge;
-//   
-//       // For the transaction to be valid, the current ledger number
-//       // must be at least minSeqLedgerGap greater than sourceAccount's
-//       // seqLedger.
-//       uint32 minSeqLedgerGap;
-//   
-//       // For the transaction to be valid, there must be a signature
-//       // corresponding to every Signer in this array, even if the
-//       // signature is not otherwise required by the sourceAccount or
-//       // operations.
-//       SignerKey extraSigners<2>;
-//   };
-//
-// ===========================================================================
-xdr.struct("PreconditionsV2", [
-  ["timeBounds", xdr.option(xdr.lookup("TimeBounds"))],
-  ["ledgerBounds", xdr.option(xdr.lookup("LedgerBounds"))],
-  ["minSeqNum", xdr.option(xdr.lookup("SequenceNumber"))],
-  ["minSeqAge", xdr.lookup("Duration")],
-  ["minSeqLedgerGap", xdr.lookup("Uint32")],
-  ["extraSigners", xdr.varArray(xdr.lookup("SignerKey"), 2)],
-]);
-
-// === xdr source ============================================================
-//
-//   enum PreconditionType
-//   {
-//       PRECOND_NONE = 0,
-//       PRECOND_TIME = 1,
-//       PRECOND_V2 = 2
-//   };
-//
-// ===========================================================================
-xdr.enum("PreconditionType", {
-  precondNone: 0,
-  precondTime: 1,
-  precondV2: 2,
-});
-
-// === xdr source ============================================================
-//
-//   union Preconditions switch (PreconditionType type)
-//   {
-//   case PRECOND_NONE:
-//       void;
-//   case PRECOND_TIME:
-//       TimeBounds timeBounds;
-//   case PRECOND_V2:
-//       PreconditionsV2 v2;
-//   };
-//
-// ===========================================================================
-xdr.union("Preconditions", {
-  switchOn: xdr.lookup("PreconditionType"),
-  switchName: "type",
-  switches: [
-    ["precondNone", xdr.void()],
-    ["precondTime", "timeBounds"],
-    ["precondV2", "v2"],
-  ],
-  arms: {
-    timeBounds: xdr.lookup("TimeBounds"),
-    v2: xdr.lookup("PreconditionsV2"),
-  },
-});
-
-// === xdr source ============================================================
-//
 //   const MAX_OPS_PER_TX = 100;
 //
 // ===========================================================================
@@ -4265,8 +4702,8 @@ xdr.union("TransactionExt", {
 //       // sequence number to consume in the account
 //       SequenceNumber seqNum;
 //   
-//       // validity conditions
-//       Preconditions cond;
+//       // validity range (inclusive) for the last ledger close time
+//       TimeBounds* timeBounds;
 //   
 //       Memo memo;
 //   
@@ -4286,7 +4723,7 @@ xdr.struct("Transaction", [
   ["sourceAccount", xdr.lookup("MuxedAccount")],
   ["fee", xdr.lookup("Uint32")],
   ["seqNum", xdr.lookup("SequenceNumber")],
-  ["cond", xdr.lookup("Preconditions")],
+  ["timeBounds", xdr.option(xdr.lookup("TimeBounds"))],
   ["memo", xdr.lookup("Memo")],
   ["operations", xdr.varArray(xdr.lookup("Operation"), xdr.lookup("MAX_OPS_PER_TX"))],
   ["ext", xdr.lookup("TransactionExt")],
@@ -5161,12 +5598,10 @@ xdr.union("SetOptionsResult", {
 //                                        // cannot create with a limit of 0
 //       CHANGE_TRUST_LOW_RESERVE =
 //           -4, // not enough funds to create a new trust line,
-//       CHANGE_TRUST_SELF_NOT_ALLOWED = -5,   // trusting self is not allowed
+//       CHANGE_TRUST_SELF_NOT_ALLOWED = -5, // trusting self is not allowed
 //       CHANGE_TRUST_TRUST_LINE_MISSING = -6, // Asset trustline is missing for pool
-//       CHANGE_TRUST_CANNOT_DELETE =
-//           -7, // Asset trustline is still referenced in a pool
-//       CHANGE_TRUST_NOT_AUTH_MAINTAIN_LIABILITIES =
-//           -8 // Asset trustline is deauthorized
+//       CHANGE_TRUST_CANNOT_DELETE = -7, // Asset trustline is still referenced in a pool
+//       CHANGE_TRUST_NOT_AUTH_MAINTAIN_LIABILITIES = -8 // Asset trustline is deauthorized
 //   };
 //
 // ===========================================================================
@@ -5215,10 +5650,10 @@ xdr.union("ChangeTrustResult", {
 //       ALLOW_TRUST_NO_TRUST_LINE = -2, // trustor does not have a trustline
 //                                       // source account does not require trust
 //       ALLOW_TRUST_TRUST_NOT_REQUIRED = -3,
-//       ALLOW_TRUST_CANT_REVOKE = -4,      // source account can't revoke trust,
+//       ALLOW_TRUST_CANT_REVOKE = -4,     // source account can't revoke trust,
 //       ALLOW_TRUST_SELF_NOT_ALLOWED = -5, // trusting self is not allowed
-//       ALLOW_TRUST_LOW_RESERVE = -6       // claimable balances can't be created
-//                                          // on revoke due to low reserves
+//       ALLOW_TRUST_LOW_RESERVE = -6 // claimable balances can't be created
+//                                    // on revoke due to low reserves
 //   };
 //
 // ===========================================================================
@@ -5837,7 +6272,8 @@ xdr.enum("LiquidityPoolDepositResultCode", {
 
 // === xdr source ============================================================
 //
-//   union LiquidityPoolDepositResult switch (LiquidityPoolDepositResultCode code)
+//   union LiquidityPoolDepositResult switch (
+//       LiquidityPoolDepositResultCode code)
 //   {
 //   case LIQUIDITY_POOL_DEPOSIT_SUCCESS:
 //       void;
@@ -5865,14 +6301,14 @@ xdr.union("LiquidityPoolDepositResult", {
 //       LIQUIDITY_POOL_WITHDRAW_SUCCESS = 0,
 //   
 //       // codes considered as "failure" for the operation
-//       LIQUIDITY_POOL_WITHDRAW_MALFORMED = -1,    // bad input
-//       LIQUIDITY_POOL_WITHDRAW_NO_TRUST = -2,     // no trust line for one of the
-//                                                  // assets
-//       LIQUIDITY_POOL_WITHDRAW_UNDERFUNDED = -3,  // not enough balance of the
-//                                                  // pool share
-//       LIQUIDITY_POOL_WITHDRAW_LINE_FULL = -4,    // would go above limit for one
-//                                                  // of the assets
-//       LIQUIDITY_POOL_WITHDRAW_UNDER_MINIMUM = -5 // didn't withdraw enough
+//       LIQUIDITY_POOL_WITHDRAW_MALFORMED = -1,      // bad input
+//       LIQUIDITY_POOL_WITHDRAW_NO_TRUST = -2,       // no trust line for one of the
+//                                                    // assets
+//       LIQUIDITY_POOL_WITHDRAW_UNDERFUNDED = -3,    // not enough balance of the
+//                                                    // pool share
+//       LIQUIDITY_POOL_WITHDRAW_LINE_FULL = -4,      // would go above limit for one
+//                                                    // of the assets
+//       LIQUIDITY_POOL_WITHDRAW_UNDER_MINIMUM = -5   // didn't withdraw enough
 //   };
 //
 // ===========================================================================
@@ -5887,7 +6323,8 @@ xdr.enum("LiquidityPoolWithdrawResultCode", {
 
 // === xdr source ============================================================
 //
-//   union LiquidityPoolWithdrawResult switch (LiquidityPoolWithdrawResultCode code)
+//   union LiquidityPoolWithdrawResult switch (
+//       LiquidityPoolWithdrawResultCode code)
 //   {
 //   case LIQUIDITY_POOL_WITHDRAW_SUCCESS:
 //       void;
@@ -5903,6 +6340,232 @@ xdr.union("LiquidityPoolWithdrawResult", {
     ["liquidityPoolWithdrawSuccess", xdr.void()],
   ],
   arms: {
+  },
+  defaultArm: xdr.void(),
+});
+
+// === xdr source ============================================================
+//
+//   enum ManageContractResultCode
+//   {
+//       MANAGE_CONTRACT_SUCCESS = 0,
+//       MANAGE_CONTRACT_NOT_SUPPORTED_YET = -1,
+//       MANAGE_CONTRACT_NOT_FOUND = -2,
+//       MANAGE_CONTRACT_LOW_RESERVE = -3
+//   };
+//
+// ===========================================================================
+xdr.enum("ManageContractResultCode", {
+  manageContractSuccess: 0,
+  manageContractNotSupportedYet: -1,
+  manageContractNotFound: -2,
+  manageContractLowReserve: -3,
+});
+
+// === xdr source ============================================================
+//
+//   union ManageContractResult switch (
+//       ManageContractResultCode code)
+//   {
+//       case MANAGE_CONTRACT_SUCCESS:
+//           void;
+//       case MANAGE_CONTRACT_NOT_SUPPORTED_YET:
+//           void;
+//       case MANAGE_CONTRACT_NOT_FOUND:
+//           void;
+//       case MANAGE_CONTRACT_LOW_RESERVE:
+//           void;
+//       default:
+//           void;
+//   };
+//
+// ===========================================================================
+xdr.union("ManageContractResult", {
+  switchOn: xdr.lookup("ManageContractResultCode"),
+  switchName: "code",
+  switches: [
+    ["manageContractSuccess", xdr.void()],
+    ["manageContractNotSupportedYet", xdr.void()],
+    ["manageContractNotFound", xdr.void()],
+    ["manageContractLowReserve", xdr.void()],
+  ],
+  arms: {
+  },
+  defaultArm: xdr.void(),
+});
+
+// === xdr source ============================================================
+//
+//   enum InvokeContractResultCode
+//   {
+//       INVOKE_CONTRACT_SUCCESS = 0,
+//       INVOKE_CONTRACT_NOT_SUPPORTED_YET = -1,
+//       INVOKE_CONTRACT_TRAPPED = -2,
+//       INVOKE_CONTRACT_HOST_ERR = -3,
+//       INVOKE_CONTRACT_MALFORMED = -4,
+//       INVOKE_CONTRACT_OUT_OF_GAS = -5
+//   };
+//
+// ===========================================================================
+xdr.enum("InvokeContractResultCode", {
+  invokeContractSuccess: 0,
+  invokeContractNotSupportedYet: -1,
+  invokeContractTrapped: -2,
+  invokeContractHostErr: -3,
+  invokeContractMalformed: -4,
+  invokeContractOutOfGas: -5,
+});
+
+// === xdr source ============================================================
+//
+//   enum ContractTrapType
+//   {
+//       HOST_TRAPPED = 0,
+//       GUEST_TRAPPED = 1
+//   };
+//
+// ===========================================================================
+xdr.enum("ContractTrapType", {
+  hostTrapped: 0,
+  guestTrapped: 1,
+});
+
+// === xdr source ============================================================
+//
+//   enum WasmTrapCode {
+//       WASM_TRAP_UNSPECIFIED = -1, // For engines that don't differentiate traps.
+//       WASM_TRAP_OUT_OF_BOUNDS_MEMORY_ACCESS = -2,
+//       WASM_TRAP_DIVISION_BY_ZERO = -3,
+//       WASM_TRAP_INTEGER_OVERFLOW = -4,
+//       WASM_TRAP_INTEGER_CONVERSION = -5,
+//       WASM_TRAP_INDIRECT_CALL_TYPE_MISMATCH = -6,
+//       WASM_TRAP_TABLE_INDEX_OUT_OF_RANGE = -7,
+//       WASM_TRAP_TABLE_ELEMENT_IS_NULL = -8,
+//       WASM_TRAP_EXIT = -9,
+//       WASM_TRAP_ABORT = -10,
+//       WASM_TRAP_UNREACHABLE = -11,
+//       WASM_TRAP_STACK_OVERFLOW = -12
+//   };
+//
+// ===========================================================================
+xdr.enum("WasmTrapCode", {
+  wasmTrapUnspecified: -1,
+  wasmTrapOutOfBoundsMemoryAccess: -2,
+  wasmTrapDivisionByZero: -3,
+  wasmTrapIntegerOverflow: -4,
+  wasmTrapIntegerConversion: -5,
+  wasmTrapIndirectCallTypeMismatch: -6,
+  wasmTrapTableIndexOutOfRange: -7,
+  wasmTrapTableElementIsNull: -8,
+  wasmTrapExit: -9,
+  wasmTrapAbort: -10,
+  wasmTrapUnreachable: -11,
+  wasmTrapStackOverflow: -12,
+});
+
+// === xdr source ============================================================
+//
+//   enum HostTrapCode {
+//       HOST_TRAP_UNSPECIFIED = -1,
+//       HOST_TRAP_VALUE_NOT_FOUND = -2,
+//       HOST_TRAP_VALUE_HAS_WRONG_TYPE = -3,
+//       HOST_TRAP_VALUE_OUT_OF_RANGE = -4,
+//       HOST_TRAP_LEDGER_ENTRY_DENIED = -5
+//   };
+//
+// ===========================================================================
+xdr.enum("HostTrapCode", {
+  hostTrapUnspecified: -1,
+  hostTrapValueNotFound: -2,
+  hostTrapValueHasWrongType: -3,
+  hostTrapValueOutOfRange: -4,
+  hostTrapLedgerEntryDenied: -5,
+});
+
+// === xdr source ============================================================
+//
+//   union switch (ContractCodeType type) {
+//               case CONTRACT_CODE_WASM:
+//                   WasmTrapCode wasmTrap;
+//               default:
+//                   void;
+//           }
+//
+// ===========================================================================
+xdr.union("InvokeContractResultTrapGuestTrap", {
+  switchOn: xdr.lookup("ContractCodeType"),
+  switchName: "type",
+  switches: [
+    ["contractCodeWasm", "wasmTrap"],
+  ],
+  arms: {
+    wasmTrap: xdr.lookup("WasmTrapCode"),
+  },
+  defaultArm: xdr.void(),
+});
+
+// === xdr source ============================================================
+//
+//   union switch (ContractTrapType type) {
+//       case HOST_TRAPPED:
+//           HostTrapCode hostTrap;
+//       case GUEST_TRAPPED:
+//           union switch (ContractCodeType type) {
+//               case CONTRACT_CODE_WASM:
+//                   WasmTrapCode wasmTrap;
+//               default:
+//                   void;
+//           } guestTrap;
+//       }
+//
+// ===========================================================================
+xdr.union("InvokeContractResultTrap", {
+  switchOn: xdr.lookup("ContractTrapType"),
+  switchName: "type",
+  switches: [
+    ["hostTrapped", "hostTrap"],
+    ["guestTrapped", "guestTrap"],
+  ],
+  arms: {
+    hostTrap: xdr.lookup("HostTrapCode"),
+    guestTrap: xdr.lookup("InvokeContractResultTrapGuestTrap"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   union InvokeContractResult switch (
+//       InvokeContractResultCode code)
+//   {
+//   case INVOKE_CONTRACT_SUCCESS:
+//       SCVal returnVal;
+//   case INVOKE_CONTRACT_TRAPPED:
+//       union switch (ContractTrapType type) {
+//       case HOST_TRAPPED:
+//           HostTrapCode hostTrap;
+//       case GUEST_TRAPPED:
+//           union switch (ContractCodeType type) {
+//               case CONTRACT_CODE_WASM:
+//                   WasmTrapCode wasmTrap;
+//               default:
+//                   void;
+//           } guestTrap;
+//       } trap;
+//   default:
+//       void;
+//   };
+//
+// ===========================================================================
+xdr.union("InvokeContractResult", {
+  switchOn: xdr.lookup("InvokeContractResultCode"),
+  switchName: "code",
+  switches: [
+    ["invokeContractSuccess", "returnVal"],
+    ["invokeContractTrapped", "trap"],
+  ],
+  arms: {
+    returnVal: xdr.lookup("ScVal"),
+    trap: xdr.lookup("InvokeContractResultTrap"),
   },
   defaultArm: xdr.void(),
 });
@@ -5984,6 +6647,10 @@ xdr.enum("OperationResultCode", {
 //           LiquidityPoolDepositResult liquidityPoolDepositResult;
 //       case LIQUIDITY_POOL_WITHDRAW:
 //           LiquidityPoolWithdrawResult liquidityPoolWithdrawResult;
+//       case MANAGE_CONTRACT:
+//           ManageContractResult manageContractResult;
+//       case INVOKE_CONTRACT:
+//           InvokeContractResult invokeContractResult;
 //       }
 //
 // ===========================================================================
@@ -6015,6 +6682,8 @@ xdr.union("OperationResultTr", {
     ["setTrustLineFlags", "setTrustLineFlagsResult"],
     ["liquidityPoolDeposit", "liquidityPoolDepositResult"],
     ["liquidityPoolWithdraw", "liquidityPoolWithdrawResult"],
+    ["manageContract", "manageContractResult"],
+    ["invokeContract", "invokeContractResult"],
   ],
   arms: {
     createAccountResult: xdr.lookup("CreateAccountResult"),
@@ -6041,6 +6710,8 @@ xdr.union("OperationResultTr", {
     setTrustLineFlagsResult: xdr.lookup("SetTrustLineFlagsResult"),
     liquidityPoolDepositResult: xdr.lookup("LiquidityPoolDepositResult"),
     liquidityPoolWithdrawResult: xdr.lookup("LiquidityPoolWithdrawResult"),
+    manageContractResult: xdr.lookup("ManageContractResult"),
+    invokeContractResult: xdr.lookup("InvokeContractResult"),
   },
 });
 
@@ -6099,6 +6770,10 @@ xdr.union("OperationResultTr", {
 //           LiquidityPoolDepositResult liquidityPoolDepositResult;
 //       case LIQUIDITY_POOL_WITHDRAW:
 //           LiquidityPoolWithdrawResult liquidityPoolWithdrawResult;
+//       case MANAGE_CONTRACT:
+//           ManageContractResult manageContractResult;
+//       case INVOKE_CONTRACT:
+//           InvokeContractResult invokeContractResult;
 //       }
 //       tr;
 //   default:
@@ -6141,10 +6816,7 @@ xdr.union("OperationResult", {
 //   
 //       txNOT_SUPPORTED = -12,         // transaction type not supported
 //       txFEE_BUMP_INNER_FAILED = -13, // fee bump inner transaction failed
-//       txBAD_SPONSORSHIP = -14,       // sponsorship not confirmed
-//       txBAD_MIN_SEQ_AGE_OR_GAP =
-//           -15, // minSeqAge or minSeqLedgerGap conditions not met
-//       txMALFORMED = -16 // precondition is invalid
+//       txBAD_SPONSORSHIP = -14        // sponsorship not confirmed
 //   };
 //
 // ===========================================================================
@@ -6165,8 +6837,6 @@ xdr.enum("TransactionResultCode", {
   txNotSupported: -12,
   txFeeBumpInnerFailed: -13,
   txBadSponsorship: -14,
-  txBadMinSeqAgeOrGap: -15,
-  txMalformed: -16,
 });
 
 // === xdr source ============================================================
@@ -6190,8 +6860,6 @@ xdr.enum("TransactionResultCode", {
 //       case txNOT_SUPPORTED:
 //       // txFEE_BUMP_INNER_FAILED is not included
 //       case txBAD_SPONSORSHIP:
-//       case txBAD_MIN_SEQ_AGE_OR_GAP:
-//       case txMALFORMED:
 //           void;
 //       }
 //
@@ -6214,8 +6882,6 @@ xdr.union("InnerTransactionResultResult", {
     ["txInternalError", xdr.void()],
     ["txNotSupported", xdr.void()],
     ["txBadSponsorship", xdr.void()],
-    ["txBadMinSeqAgeOrGap", xdr.void()],
-    ["txMalformed", xdr.void()],
   ],
   arms: {
     results: xdr.varArray(xdr.lookup("OperationResult"), 2147483647),
@@ -6267,8 +6933,6 @@ xdr.union("InnerTransactionResultExt", {
 //       case txNOT_SUPPORTED:
 //       // txFEE_BUMP_INNER_FAILED is not included
 //       case txBAD_SPONSORSHIP:
-//       case txBAD_MIN_SEQ_AGE_OR_GAP:
-//       case txMALFORMED:
 //           void;
 //       }
 //       result;
@@ -6432,31 +7096,11 @@ xdr.typedef("Int64", xdr.hyper());
 
 // === xdr source ============================================================
 //
-//   union ExtensionPoint switch (int v)
-//   {
-//   case 0:
-//       void;
-//   };
-//
-// ===========================================================================
-xdr.union("ExtensionPoint", {
-  switchOn: xdr.int(),
-  switchName: "v",
-  switches: [
-    [0, xdr.void()],
-  ],
-  arms: {
-  },
-});
-
-// === xdr source ============================================================
-//
 //   enum CryptoKeyType
 //   {
 //       KEY_TYPE_ED25519 = 0,
 //       KEY_TYPE_PRE_AUTH_TX = 1,
 //       KEY_TYPE_HASH_X = 2,
-//       KEY_TYPE_ED25519_SIGNED_PAYLOAD = 3,
 //       // MUXED enum values for supported type are derived from the enum values
 //       // above by ORing them with 0x100
 //       KEY_TYPE_MUXED_ED25519 = 0x100
@@ -6467,7 +7111,6 @@ xdr.enum("CryptoKeyType", {
   keyTypeEd25519: 0,
   keyTypePreAuthTx: 1,
   keyTypeHashX: 2,
-  keyTypeEd25519SignedPayload: 3,
   keyTypeMuxedEd25519: 256,
 });
 
@@ -6489,8 +7132,7 @@ xdr.enum("PublicKeyType", {
 //   {
 //       SIGNER_KEY_TYPE_ED25519 = KEY_TYPE_ED25519,
 //       SIGNER_KEY_TYPE_PRE_AUTH_TX = KEY_TYPE_PRE_AUTH_TX,
-//       SIGNER_KEY_TYPE_HASH_X = KEY_TYPE_HASH_X,
-//       SIGNER_KEY_TYPE_ED25519_SIGNED_PAYLOAD = KEY_TYPE_ED25519_SIGNED_PAYLOAD
+//       SIGNER_KEY_TYPE_HASH_X = KEY_TYPE_HASH_X
 //   };
 //
 // ===========================================================================
@@ -6498,7 +7140,6 @@ xdr.enum("SignerKeyType", {
   signerKeyTypeEd25519: 0,
   signerKeyTypePreAuthTx: 1,
   signerKeyTypeHashX: 2,
-  signerKeyTypeEd25519SignedPayload: 3,
 });
 
 // === xdr source ============================================================
@@ -6523,22 +7164,6 @@ xdr.union("PublicKey", {
 
 // === xdr source ============================================================
 //
-//   struct
-//       {
-//           /* Public key that must sign the payload. */
-//           uint256 ed25519;
-//           /* Payload to be raw signed by ed25519. */
-//           opaque payload<64>;
-//       }
-//
-// ===========================================================================
-xdr.struct("SignerKeyEd25519SignedPayload", [
-  ["ed25519", xdr.lookup("Uint256")],
-  ["payload", xdr.varOpaque(64)],
-]);
-
-// === xdr source ============================================================
-//
 //   union SignerKey switch (SignerKeyType type)
 //   {
 //   case SIGNER_KEY_TYPE_ED25519:
@@ -6549,14 +7174,6 @@ xdr.struct("SignerKeyEd25519SignedPayload", [
 //   case SIGNER_KEY_TYPE_HASH_X:
 //       /* Hash of random 256 bit preimage X */
 //       uint256 hashX;
-//   case SIGNER_KEY_TYPE_ED25519_SIGNED_PAYLOAD:
-//       struct
-//       {
-//           /* Public key that must sign the payload. */
-//           uint256 ed25519;
-//           /* Payload to be raw signed by ed25519. */
-//           opaque payload<64>;
-//       } ed25519SignedPayload;
 //   };
 //
 // ===========================================================================
@@ -6567,13 +7184,53 @@ xdr.union("SignerKey", {
     ["signerKeyTypeEd25519", "ed25519"],
     ["signerKeyTypePreAuthTx", "preAuthTx"],
     ["signerKeyTypeHashX", "hashX"],
-    ["signerKeyTypeEd25519SignedPayload", "ed25519SignedPayload"],
   ],
   arms: {
     ed25519: xdr.lookup("Uint256"),
     preAuthTx: xdr.lookup("Uint256"),
     hashX: xdr.lookup("Uint256"),
-    ed25519SignedPayload: xdr.lookup("SignerKeyEd25519SignedPayload"),
+  },
+});
+
+// === xdr source ============================================================
+//
+//   struct
+//       {
+//           uint64 id;
+//           uint256 ed25519;
+//       }
+//
+// ===========================================================================
+xdr.struct("MuxedAccountMed25519", [
+  ["id", xdr.lookup("Uint64")],
+  ["ed25519", xdr.lookup("Uint256")],
+]);
+
+// === xdr source ============================================================
+//
+//   union MuxedAccount switch (CryptoKeyType type)
+//   {
+//   case KEY_TYPE_ED25519:
+//       uint256 ed25519;
+//   case KEY_TYPE_MUXED_ED25519:
+//       struct
+//       {
+//           uint64 id;
+//           uint256 ed25519;
+//       } med25519;
+//   };
+//
+// ===========================================================================
+xdr.union("MuxedAccount", {
+  switchOn: xdr.lookup("CryptoKeyType"),
+  switchName: "type",
+  switches: [
+    ["keyTypeEd25519", "ed25519"],
+    ["keyTypeMuxedEd25519", "med25519"],
+  ],
+  arms: {
+    ed25519: xdr.lookup("Uint256"),
+    med25519: xdr.lookup("MuxedAccountMed25519"),
   },
 });
 
